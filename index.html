@@ -8,32 +8,54 @@
         #searchBox { width: 100%; padding: 10px; font-size: 16px; }
         .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
         .highlight { background-color: yellow; }
-        button { margin-top: 5px; }
+        #status { margin-bottom: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <h2>Поиск по вопросам</h2>
+<div id="status">Загрузка данных...</div>
 <input type="text" id="searchBox" placeholder="Введите слово или фразу...">
 <div id="results"></div>
 
 <script>
 let textData = "";
 
-// Загружаем текст
+// Загружаем текст и проверяем подключение
 fetch('document.txt')
-    .then(response => response.text())
-    .then(data => { textData = data; });
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Не удалось загрузить document.txt");
+        }
+        return response.text();
+    })
+    .then(data => {
+        textData = data;
+        document.getElementById('status').textContent = "Данные загружены. Можно искать.";
+    })
+    .catch(err => {
+        document.getElementById('status').textContent = "Ошибка: " + err.message;
+    });
 
 document.getElementById('searchBox').addEventListener('input', function () {
     const query = this.value.trim().toLowerCase();
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = "";
 
+    if (!textData) {
+        resultsDiv.innerHTML = "<p style='color:red;'>Текстовые данные ещё не загружены.</p>";
+        return;
+    }
+
     if (query.length < 2) return;
 
     const lines = textData.split("\n");
     const matches = lines.filter(line => line.toLowerCase().includes(query));
+
+    if (matches.length === 0) {
+        resultsDiv.innerHTML = "<p>Ничего не найдено.</p>";
+        return;
+    }
 
     matches.forEach(match => {
         const highlighted = match.replace(new RegExp(query, "gi"), m => `<span class="highlight">${m}</span>`);
