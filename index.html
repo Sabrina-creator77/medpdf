@@ -1,78 +1,122 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Поиск по вопросам</title>
+<meta charset="UTF-8" />
+<title>Поиск вопросов</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    #searchBox { width: 100%; padding: 10px; font-size: 16px; }
-    .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; }
-    #status { margin-bottom: 15px; font-weight: bold; }
-    .correct { background-color: lightgreen; font-weight: bold; }
-    .highlight { background-color: yellow; font-weight: bold; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    padding: 10px;
+  }
+  input {
+    width: 100%;
+    font-size: 18px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+  .question-block {
+    background-color: #ffff99;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+  }
+  .question-text {
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  .answer {
+    margin-left: 15px;
+    font-size: 16px;
+  }
+  .correct {
+    color: green;
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
 
-<h2>Поиск по вопросам</h2>
-<div id="status">Загрузка данных...</div>
-<input type="text" id="searchBox" placeholder="Введите слово или фразу...">
+<h2>Поиск вопросов</h2>
+<input type="search" id="searchInput" placeholder="Введите часть вопроса..." oninput="searchQuestions()" />
+
 <div id="results"></div>
 
 <script>
-let questions = [];
+// Массив вопросов и ответов
+const data = [
+  {
+    question: "Что такое HTML?",
+    answers: [
+      { text: "Язык разметки", correct: false },
+      { text: "Язык программирования", correct: true },
+      { text: "Стиль оформления", correct: false }
+    ]
+  },
+  {
+    question: "Как работает CSS?",
+    answers: [
+      { text: "Описывает внешний вид элементов", correct: true },
+      { text: "Язык программирования", correct: false },
+      { text: "База данных", correct: false }
+    ]
+  },
+  {
+    question: "Что такое JavaScript?",
+    answers: [
+      { text: "Язык программирования для веба", correct: true },
+      { text: "Статический язык разметки", correct: false },
+      { text: "Система управления базами данных", correct: false }
+    ]
+  },
+  // Добавляй сюда свои вопросы и ответы
+];
 
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+function searchQuestions() {
+  const input = document.getElementById('searchInput').value.trim().toLowerCase();
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = '';
 
-fetch('document.txt')
-    .then(res => res.text())
-    .then(data => {
-        document.getElementById('status').textContent = "Данные загружены. Можно искать.";
-        // Разделяем текст на блоки (вопрос + ответы)
-        // Вопрос начинается с ЗАГЛАВНЫХ букв или цифры + ")"
-        const regex = /(^[А-ЯA-Z0-9].*?(?=(?:\n[А-ЯA-Z0-9]|\n\d+\))|\n*$))/gms;
-        questions = data.match(regex) || [];
-        questions = questions.map(q => q.trim()).filter(q => q.length > 0);
-    })
-    .catch(err => {
-        document.getElementById('status').textContent = "Ошибка: " + err.message;
+  if (!input) {
+    resultsDiv.textContent = 'Введите текст для поиска вопроса';
+    return;
+  }
+
+  // Фильтруем вопросы, где встречается подстрока input
+  const filtered = data.filter(item => item.question.toLowerCase().includes(input));
+
+  if (filtered.length === 0) {
+    resultsDiv.textContent = 'Вопросы не найдены';
+    return;
+  }
+
+  // Выводим каждый найденный вопрос с ответами
+  filtered.forEach(item => {
+    const block = document.createElement('div');
+    block.className = 'question-block';
+
+    const questionElem = document.createElement('div');
+    questionElem.className = 'question-text';
+    questionElem.textContent = item.question;
+    block.appendChild(questionElem);
+
+    item.answers.forEach(ans => {
+      const ansElem = document.createElement('div');
+      ansElem.className = 'answer';
+      ansElem.textContent = ans.text;
+      if (ans.correct) {
+        ansElem.classList.add('correct');
+        ansElem.textContent = '+ ' + ansElem.textContent;
+      }
+      block.appendChild(ansElem);
     });
 
-document.getElementById('searchBox').addEventListener('input', function () {
-    const queryRaw = this.value.trim();
-    const query = queryRaw.toLowerCase();
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = "";
-
-    if (!questions.length || query.length < 2) return;
-
-    // Ищем первый вопрос с совпадением
-    const match = questions.find(q => q.toLowerCase().includes(query));
-
-    if (!match) {
-        resultsDiv.innerHTML = "<p>Ничего не найдено.</p>";
-        return;
-    }
-
-    // Зелёный плюс
-    let formatted = match.replace(/\(\+\)/g, '<span class="correct">(+)</span>');
-
-    // Подсветка совпадений
-    const regex = new RegExp(escapeRegExp(queryRaw), "gi");
-    formatted = formatted.replace(regex, m => `<span class="highlight">${m}</span>`);
-
-    const div = document.createElement('div');
-    div.classList.add('result');
-    div.innerHTML = formatted + '<br><button onclick="window.open(\'document.pdf\')">Открыть PDF</button>';
-    resultsDiv.appendChild(div);
-
-    setTimeout(() => {
-        div.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-});
+    resultsDiv.appendChild(block);
+  });
+}
 </script>
 
 </body>
-</html>
+</html
