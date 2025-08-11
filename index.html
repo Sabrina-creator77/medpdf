@@ -8,13 +8,8 @@
     #searchBox { width: 100%; padding: 10px; font-size: 16px; }
     .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; }
     #status { margin-bottom: 15px; font-weight: bold; }
-    .highlight-question {
-        background-color: #fff8c4; /* нежный желтый */
-        border: 2px solid orange;
-        border-radius: 5px;
-        padding: 8px;
-    }
     .correct { background-color: lightgreen; font-weight: bold; }
+    .highlight { background-color: yellow; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -27,19 +22,25 @@
 <script>
 let questions = [];
 
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Загружаем текст
 fetch('document.txt')
     .then(res => res.text())
     .then(data => {
         document.getElementById('status').textContent = "Данные загружены. Можно искать.";
-        questions = data.split(/\n\s*\n/).map(q => q.trim()).filter(q => q.length > 0);
+        // Объединяем переносы строк внутри вопросов, чтобы поиск работал корректно
+        questions = data.split(/\n\s*\n/).map(q => q.replace(/\s+/g, ' ').trim()).filter(q => q.length > 0);
     })
     .catch(err => {
         document.getElementById('status').textContent = "Ошибка: " + err.message;
     });
 
 document.getElementById('searchBox').addEventListener('input', function () {
-    const query = this.value.trim().toLowerCase();
+    const queryRaw = this.value.trim();
+    const query = queryRaw.toLowerCase();
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = "";
 
@@ -52,10 +53,13 @@ document.getElementById('searchBox').addEventListener('input', function () {
         return;
     }
 
+    // Подсветка правильного ответа (+) и текста поиска
     let formatted = match.replace(/\(\+\)/g, '<span class="correct">(+)</span>');
+    const regex = new RegExp(escapeRegExp(queryRaw), "gi");
+    formatted = formatted.replace(regex, m => `<span class="highlight">${m}</span>`);
 
     const div = document.createElement('div');
-    div.classList.add('result', 'highlight-question');
+    div.classList.add('result');
     div.innerHTML = formatted + '<br><button onclick="window.open(\'document.pdf\')">Открыть PDF</button>';
     resultsDiv.appendChild(div);
 
