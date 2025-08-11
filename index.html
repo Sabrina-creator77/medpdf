@@ -26,13 +26,15 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Загружаем текст
 fetch('document.txt')
     .then(res => res.text())
     .then(data => {
         document.getElementById('status').textContent = "Данные загружены. Можно искать.";
-        // Объединяем переносы строк внутри вопросов, чтобы поиск работал корректно
-        questions = data.split(/\n\s*\n/).map(q => q.replace(/\s+/g, ' ').trim()).filter(q => q.length > 0);
+        // Склеиваем переносы строк внутри одного вопроса
+        questions = data
+            .split(/\n\s*\n/)                   // делим по пустым строкам
+            .map(q => q.replace(/\s+/g, ' ').trim()) // убираем лишние пробелы и переносы
+            .filter(q => q.length > 0);
     })
     .catch(err => {
         document.getElementById('status').textContent = "Ошибка: " + err.message;
@@ -53,8 +55,10 @@ document.getElementById('searchBox').addEventListener('input', function () {
         return;
     }
 
-    // Подсветка правильного ответа (+) и текста поиска
+    // Зелёный плюс для правильного ответа
     let formatted = match.replace(/\(\+\)/g, '<span class="correct">(+)</span>');
+
+    // Подсветка только совпадающего слова/фразы
     const regex = new RegExp(escapeRegExp(queryRaw), "gi");
     formatted = formatted.replace(regex, m => `<span class="highlight">${m}</span>`);
 
