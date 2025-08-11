@@ -11,6 +11,7 @@
         .correct { background-color: lightgreen; font-weight: bold; }
         #status { margin-bottom: 15px; font-weight: bold; }
         button { margin-top: 5px; }
+        .first-match { background-color: #fffd9a; transition: background-color 0.5s ease; }
     </style>
 </head>
 <body>
@@ -31,7 +32,6 @@ fetch('document.txt')
     })
     .then(data => {
         document.getElementById('status').textContent = "Данные загружены. Можно искать.";
-        // Разделяем по двойным переводам строк (новый вопрос)
         questions = data.split(/\n\s*\n/).map(q => q.trim()).filter(q => q.length > 0);
     })
     .catch(err => {
@@ -57,17 +57,23 @@ document.getElementById('searchBox').addEventListener('input', function () {
         return;
     }
 
-    matches.forEach(match => {
-        // Подсвечиваем правильный ответ (метка (+))
+    matches.forEach((match, i) => {
         let formatted = match.replace(/\(\+\)/g, '<span class="correct">(+)</span>');
-        // Подсвечиваем слово поиска
         const regex = new RegExp(query, "gi");
         formatted = formatted.replace(regex, m => `<span class="highlight">${m}</span>`);
 
         const div = document.createElement('div');
         div.classList.add('result');
+        if (i === 0) div.classList.add('first-match');
         div.innerHTML = formatted + '<br><button onclick="window.open(\'document.pdf\')">Открыть PDF</button>';
         resultsDiv.appendChild(div);
+
+        // Прокрутка к первому совпадению
+        if (i === 0) {
+            setTimeout(() => {
+                div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
     });
 });
 </script>
