@@ -1,25 +1,21 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Поиск по вопросам</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #searchBox { width: 100%; padding: 10px; font-size: 16px; }
-        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; }
-        .highlight { background-color: #ffff99; } /* мягкий желтый для текста */
-        .correct { background-color: lightgreen; font-weight: bold; }
-        #status { margin-bottom: 15px; font-weight: bold; }
-        button { margin-top: 5px; }
-        .first-match {
-            background-color: #fff8c4; /* нежный желтый фон */
-            border: 2px solid orange;
-            border-radius: 5px;
-            padding: 8px;
-            margin: 5px 0;
-            transition: background-color 0.5s ease;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Поиск по вопросам</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #searchBox { width: 100%; padding: 10px; font-size: 16px; }
+    .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; }
+    #status { margin-bottom: 15px; font-weight: bold; }
+    .highlight-question {
+        background-color: #fff8c4; /* нежный желтый */
+        border: 2px solid orange;
+        border-radius: 5px;
+        padding: 8px;
+    }
+    .correct { background-color: lightgreen; font-weight: bold; }
+</style>
 </head>
 <body>
 
@@ -31,12 +27,9 @@
 <script>
 let questions = [];
 
-// Загружаем текст и разбиваем на блоки вопросов
+// Загружаем текст
 fetch('document.txt')
-    .then(response => {
-        if (!response.ok) throw new Error("Не удалось загрузить document.txt");
-        return response.text();
-    })
+    .then(res => res.text())
     .then(data => {
         document.getElementById('status').textContent = "Данные загружены. Можно искать.";
         questions = data.split(/\n\s*\n/).map(q => q.trim()).filter(q => q.length > 0);
@@ -50,38 +43,25 @@ document.getElementById('searchBox').addEventListener('input', function () {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = "";
 
-    if (!questions.length) {
-        resultsDiv.innerHTML = "<p style='color:red;'>Текстовые данные ещё не загружены.</p>";
-        return;
-    }
+    if (!questions.length || query.length < 2) return;
 
-    if (query.length < 2) return;
+    const match = questions.find(q => q.toLowerCase().includes(query));
 
-    const matches = questions.filter(q => q.toLowerCase().includes(query));
-
-    if (matches.length === 0) {
+    if (!match) {
         resultsDiv.innerHTML = "<p>Ничего не найдено.</p>";
         return;
     }
 
-    matches.forEach((match, i) => {
-        let formatted = match.replace(/\(\+\)/g, '<span class="correct">(+)</span>');
-        const regex = new RegExp(query, "gi");
-        formatted = formatted.replace(regex, m => `<span class="highlight">${m}</span>`);
+    let formatted = match.replace(/\(\+\)/g, '<span class="correct">(+)</span>');
 
-        const div = document.createElement('div');
-        div.classList.add('result');
-        if (i === 0) div.classList.add('first-match');
-        div.innerHTML = formatted + '<br><button onclick="window.open(\'document.pdf\')">Открыть PDF</button>';
-        resultsDiv.appendChild(div);
+    const div = document.createElement('div');
+    div.classList.add('result', 'highlight-question');
+    div.innerHTML = formatted + '<br><button onclick="window.open(\'document.pdf\')">Открыть PDF</button>';
+    resultsDiv.appendChild(div);
 
-        // Прокрутка к первому совпадению
-        if (i === 0) {
-            setTimeout(() => {
-                div.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-        }
-    });
+    setTimeout(() => {
+        div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 });
 </script>
 
