@@ -7,11 +7,18 @@
         body { font-family: Arial, sans-serif; margin: 20px; }
         #searchBox { width: 100%; padding: 10px; font-size: 16px; }
         .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; }
-        .highlight { background-color: yellow; }
+        .highlight { background-color: #ffff99; } /* мягкий желтый для текста */
         .correct { background-color: lightgreen; font-weight: bold; }
         #status { margin-bottom: 15px; font-weight: bold; }
         button { margin-top: 5px; }
-        .first-match { background-color: #fffd9a; transition: background-color 0.5s ease; }
+        .first-match {
+            background-color: #fff8c4; /* нежный желтый фон */
+            border: 2px solid orange;
+            border-radius: 5px;
+            padding: 8px;
+            margin: 5px 0;
+            transition: background-color 0.5s ease;
+        }
     </style>
 </head>
 <body>
