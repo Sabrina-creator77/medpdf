@@ -2,121 +2,116 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>Поиск вопросов</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Поиск вопросов и ответов</title>
 <style>
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-    padding: 10px;
-  }
-  input {
-    width: 100%;
-    font-size: 18px;
-    padding: 10px;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-  }
-  .question-block {
-    background-color: #ffff99;
-    padding: 10px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-  }
-  .question-text {
-    font-weight: bold;
-    margin-bottom: 8px;
-  }
-  .answer {
-    margin-left: 15px;
-    font-size: 16px;
-  }
-  .correct {
-    color: green;
-    font-weight: bold;
-  }
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  textarea { width: 100%; height: 250px; font-family: monospace; margin-bottom: 10px; }
+  #parseBtn, #search { padding: 8px; font-size: 16px; width: 100%; margin-bottom: 20px; }
+  .question { padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
+  .highlight { background-color: yellow; }
+  .answers { margin-left: 20px; }
+  .answer { margin-bottom: 4px; white-space: pre-wrap; }
 </style>
 </head>
 <body>
 
-<h2>Поиск вопросов</h2>
-<input type="search" id="searchInput" placeholder="Введите часть вопроса..." oninput="searchQuestions()" />
+<h2>Вставьте вопросы и ответы (формат из вашего файла)</h2>
+<textarea id="inputText" placeholder="Вставьте сюда текст с вопросами и ответами..."></textarea>
+<button id="parseBtn">Загрузить и распарсить вопросы</button>
+
+<input type="text" id="search" placeholder="Введите часть вопроса для поиска..." disabled />
 
 <div id="results"></div>
 
 <script>
-// Массив вопросов и ответов
-const data = [
-  {
-    question: "Что такое HTML?",
-    answers: [
-      { text: "Язык разметки", correct: false },
-      { text: "Язык программирования", correct: true },
-      { text: "Стиль оформления", correct: false }
-    ]
-  },
-  {
-    question: "Как работает CSS?",
-    answers: [
-      { text: "Описывает внешний вид элементов", correct: true },
-      { text: "Язык программирования", correct: false },
-      { text: "База данных", correct: false }
-    ]
-  },
-  {
-    question: "Что такое JavaScript?",
-    answers: [
-      { text: "Язык программирования для веба", correct: true },
-      { text: "Статический язык разметки", correct: false },
-      { text: "Система управления базами данных", correct: false }
-    ]
-  },
-  // Добавляй сюда свои вопросы и ответы
-];
-
-function searchQuestions() {
-  const input = document.getElementById('searchInput').value.trim().toLowerCase();
+  const inputText = document.getElementById('inputText');
+  const parseBtn = document.getElementById('parseBtn');
+  const searchInput = document.getElementById('search');
   const resultsDiv = document.getElementById('results');
-  resultsDiv.innerHTML = '';
 
-  if (!input) {
-    resultsDiv.textContent = 'Введите текст для поиска вопроса';
-    return;
-  }
+  let data = [];
 
-  // Фильтруем вопросы, где встречается подстрока input
-  const filtered = data.filter(item => item.question.toLowerCase().includes(input));
+  function parseContent(text) {
+    const lines = text.split('\n').map(l => l.trim());
+    const result = [];
+    let i = 0;
 
-  if (filtered.length === 0) {
-    resultsDiv.textContent = 'Вопросы не найдены';
-    return;
-  }
-
-  // Выводим каждый найденный вопрос с ответами
-  filtered.forEach(item => {
-    const block = document.createElement('div');
-    block.className = 'question-block';
-
-    const questionElem = document.createElement('div');
-    questionElem.className = 'question-text';
-    questionElem.textContent = item.question;
-    block.appendChild(questionElem);
-
-    item.answers.forEach(ans => {
-      const ansElem = document.createElement('div');
-      ansElem.className = 'answer';
-      ansElem.textContent = ans.text;
-      if (ans.correct) {
-        ansElem.classList.add('correct');
-        ansElem.textContent = '+ ' + ansElem.textContent;
+    while (i < lines.length) {
+      // Собираем вопрос - может быть несколько строк, пока не встретили строку с ответом (начинается с цифры и ")")
+      let questionLines = [];
+      while (i < lines.length && !/^\d\)/.test(lines[i])) {
+        if (lines[i] !== '') questionLines.push(lines[i]);
+        i++;
       }
-      block.appendChild(ansElem);
-    });
+      const question = questionLines.join(' ');
 
-    resultsDiv.appendChild(block);
+      // Собираем ответы
+      let answers = [];
+      while (i < lines.length && /^\d\)/.test(lines[i])) {
+        answers.push(lines[i]);
+        i++;
+      }
+
+      if (question && answers.length) {
+        result.push({ question, answers });
+      } else {
+        // если вопрос или ответы отсутствуют, просто продолжаем
+        i++;
+      }
+    }
+
+    return result;
+  }
+
+  parseBtn.addEventListener('click', () => {
+    const text = inputText.value.trim();
+    if (!text) {
+      alert('Пожалуйста, вставьте текст с вопросами.');
+      return;
+    }
+    data = parseContent(text);
+    if (data.length === 0) {
+      alert('Не удалось распарсить вопросы. Проверьте формат текста.');
+      return;
+    }
+    searchInput.disabled = false;
+    resultsDiv.innerHTML = `<p>Вопросы загружены: ${data.length}</p>`;
   });
-}
+
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.trim().toLowerCase();
+    resultsDiv.innerHTML = '';
+
+    if (query === '') return;
+
+    const filtered = data.filter(item => item.question.toLowerCase().includes(query));
+
+    if (filtered.length === 0) {
+      resultsDiv.textContent = 'Вопросы не найдены.';
+      return;
+    }
+
+    filtered.forEach(item => {
+      const qDiv = document.createElement('div');
+      qDiv.className = 'question highlight';
+      qDiv.textContent = item.question;
+
+      const answersDiv = document.createElement('div');
+      answersDiv.className = 'answers';
+
+      item.answers.forEach(ans => {
+        const aDiv = document.createElement('div');
+        aDiv.className = 'answer';
+        aDiv.textContent = ans;
+        answersDiv.appendChild(aDiv);
+      });
+
+      resultsDiv.appendChild(qDiv);
+      resultsDiv.appendChild(answersDiv);
+    });
+  });
 </script>
 
 </body>
-</html
+</html>
