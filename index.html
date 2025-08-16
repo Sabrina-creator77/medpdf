@@ -7,10 +7,18 @@
 <style>
   body { font-family: Arial, sans-serif; padding: 20px; }
   #search { width: 100%; padding: 10px; font-size: 16px; margin-bottom: 20px; }
-  .question { padding: 10px; border: 1px solid #ccc; margin-bottom: 10px; border-radius: 5px; }
-  .highlight { background-color: yellow; }
+  .question { 
+    padding: 10px; 
+    border: 1px solid #ccc; 
+    margin-bottom: 10px; 
+    border-radius: 5px; 
+  }
+  .highlight { 
+    background-color: #cce6ea; /* Бирюзовый */
+  }
   .answers { margin-left: 20px; }
   .answer { margin-bottom: 5px; white-space: pre-wrap; }
+  .correct { color: green; font-weight: bold; } /* для (+) */
 </style>
 </head>
 <body>
@@ -71,7 +79,14 @@
       item.answers.forEach(ans => {
         const aDiv = document.createElement('div');
         aDiv.className = 'answer';
-        aDiv.textContent = ans;
+
+        // Если есть (+), подсветим его зелёным
+        if (ans.includes('(+)')) {
+          aDiv.innerHTML = ans.replace('(+)','<span class="correct">(+)</span>');
+        } else {
+          aDiv.textContent = ans;
+        }
+
         answersDiv.appendChild(aDiv);
       });
 
